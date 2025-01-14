@@ -1,43 +1,82 @@
 from netmiko import ConnectHandler
-from switch_info_dic import AP_LIST
+from netmiko import ConnectHandler
+from netmiko.exceptions import SSHException
+from paramiko.ssh_exception import SSHException as ParamikoSSHException
+from switch_info_dic import switch_LIST
+from switch_commands import commands_dic
 
-# Function to get VLANs and LLDP info from a switch
-def get_vlan_lldp_info(device):
-    for connection_type in ["ssh", "telnet"]:
-        try:
-            device["device_type"] = f"{device['device_type']}_{connection_type}"
+def get_vlan_and_lldp_info(switch):
+    
+    try:
+        # Increase SSH timeout
+        connection = ConnectHandler(**switch, banner_timeout=30)
 
-            # Establish connection
-            connection = ConnectHandler(**device)
+        # Enter enable mode if necessary
+        if switch.get("secret"):
             connection.enable()
 
-            # Get VLAN information
-            vlan_output = connection.send_command("show vlan brief")
+        vlan_command, lldp_command = get_commands(switch["device_type"])
 
-            # Get LLDP neighbor information
-            lldp_output = connection.send_command("show lldp neighbors detail")
+        # Get VLAN information
+        vlan_output = connection.send_command(vlan_command)
 
-            # Close the connection
-            connection.disconnect()
+        # Get LLDP neighbors
+        lldp_output = connection.send_command(lldp_command)
 
-            return vlan_output, lldp_output
-        except Exception as e:
-            print(f"Error connecting to {device['host']} via {connection_type}: {e}")
+        # Close the connection
+        connection.disconnect()
 
-    print(f"Failed to connect to {device['host']} via both SSH and Telnet.")
+        return vlan_output, lldp_output
+    except Exception as e:
+        print(f"Failed with for switch {switch['host']}: {e}")
+
+    print(f"All device types failed for switch {switch['host']}")
     return None, None
 
-# Main script
+
+
+def get_commands (device_type:str):
+
+    cisco_device_types = ["cisco_ios","cisco_ios_telnet"]
+    nortell_device_types = ["avaya_ers"]
+    hp_procurve = ["hp_procurve_telnet"]
+
+    if device_type in cisco_device_types:
+        command_type = "cisco"
+    elif device_type in hp_procurve:
+        command_type = "hp_procurve"
+    elif device_type in nortell_device_types:
+        command_type = "nortell"
+    else:
+        return None
+
+    return (commands_dic[command_type]["vlan_output"], commands_dic[command_type]["lldp_output"])
+
+
+def verify_connection(switch):
+
+    try:
+        # Increase SSH timeout
+        connection = ConnectHandler(**switch, banner_timeout=30)
+        print(f"Sucessfull conection with switch {switch['host']}")
+    except Exception as e:
+        print(f"Failed with for switch {switch['host']}: {e}")
+
+# Main function
 if __name__ == "__main__":
-    for ap in AP_LIST:
-        print(f"\nQuerying AP: {ap['host']}\n")
-        vlan_info, lldp_info = get_vlan_lldp_info(ap)
-
+    for switch in switch_LIST:
+        print(f"\nConnecting to switch: {switch['host']}")
+        vlan_info, lldp_info = get_vlan_and_lldp_info(switch)
+        #verify_connection(switch)
         if vlan_info and lldp_info:
-            print("--- VLAN Information ---")
-            print(vlan_info)
+            info_string =" "
+            info_string += f"\n--- VLAN Information for {switch['host']} ---\n"
+            info_string += vlan_info
+            info_string += f"\n--- LLDP Neighbors for {switch['host']} ---\n"
+            info_string += lldp_info
 
-            print("\n--- LLDP Information ---")
-            print(lldp_info)
+            with open(f"switch_info/{switch['host']}.txt", "w") as f:
+                f.write(info_string)
+
         else:
-            print("Failed to retrieve information from this AP.")
+            print(f"Failed to retrieve information for switch {switch['host']}")
