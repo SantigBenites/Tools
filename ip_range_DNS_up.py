@@ -3,7 +3,7 @@ import socket
 from tabulate import tabulate
 
 # Define the IP range to scan
-IP_RANGE = "10.101.85.128/25"
+IP_RANGE = "10.101.84.128/25"
 
 # Initialize the nmap scanner
 scanner = nmap.PortScanner()
