@@ -17,8 +17,8 @@ def send_wol(mac_address, ip_address, port=9):
 
 if __name__ == "__main__":
 
-    mac  = "00:d8:61:f6:fb:d0"
-    ip   = "10.101.151.3"
+    mac  = "b0:22:7a:2f:53:87"
+    ip   = "10.101.149.54"
     port = 9
     
     send_wol(mac, ip, port)
