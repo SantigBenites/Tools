@@ -62,8 +62,9 @@ def get_os_info(ip):
 
 def create_excel_report(data, filename):
     wb = openpyxl.Workbook()
+    print(data.items())
     for ip_range, results in data.items():
-        ws = wb.create_sheet(title=ip_range)
+        ws = wb.create_sheet(title=filename)
         ws.append(['IP', 'MAC Address', 'Hostname', 'OS','SSH'])
         for result in results:
             # Convert OS list to a string
@@ -78,7 +79,7 @@ def create_excel_report(data, filename):
 
 ip_ranges = [
     #"10.10.0.0/16",
-    "10.10.20.0/24",
+    "10.20.0.0/24",
     "10.30.0.0/24",
     "10.40.0.0/24",
     "10.101.84.128/25",
@@ -106,7 +107,8 @@ for ip_range in ip_ranges:
         print(f"Found {ip, mac, hostname, os_info, ssh_status}")
         all_results[ip_range] = results
 
-    create_excel_report(all_results, f'range_{ip_range}.xlsx')
-    print(f"Report generated as 'range_{ip_range}.xlsx'")
+    create_excel_report(results, f'range_{ip_range_list[0]}.xlsx')
+    print(f"Report generated as 'range_{ip_range_list[0]}.xlsx'")
 
+create_excel_report(results, f'range_{ip_range_list[0]}.xlsx')
 print("Scan Completed")

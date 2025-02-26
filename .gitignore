@@ -1,2 +1,3 @@
 switch_info/switch_info/*
 ansible-invetory/sudopass
+ansible-invetory/*.xlsx
